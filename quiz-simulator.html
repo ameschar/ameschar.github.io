@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quiz Simulator</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #d5d5d5 0%, #d5d5d5 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .upload-area {
+            padding: 40px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 15px 30px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .upload-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        #file-input {
+            display: none;
+        }
+
+        .quiz-content {
+            padding: 30px;
+            display: none;
+        }
+
+        .quiz-content.active {
+            display: block;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        h2 {
+            color: #555;
+            margin: 30px 0 20px;
+            font-size: 1.8em;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        h3 {
+            color: #667eea;
+            margin: 25px 0 15px;
+            font-size: 1.4em;
+        }
+
+        .question {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #667eea;
+        }
+
+        .question-text {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .options {
+            list-style: none;
+        }
+
+        .option {
+            padding: 10px 15px;
+            margin: 8px 0;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e0e0e0;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .option:hover {
+            border-color: #667eea;
+            background: #f0f4ff;
+        }
+
+        .option.selected {
+            background: #667eea;
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .option.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            color: #155724;
+        }
+
+        .option.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .cloze-dropdown {
+            padding: 8px 12px;
+            margin: 0 5px;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            background: white;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            vertical-align: middle;
+            display: inline-block;
+        }
+
+        .cloze-text {
+            line-height: 2.5;
+        }
+
+        .cloze-dropdown:hover {
+            background: #f0f4ff;
+        }
+
+        .cloze-dropdown.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .cloze-dropdown.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .match-container {
+            display: flex;
+            gap: 40px;
+            margin: 20px 0;
+        }
+
+        .match-column {
+            flex: 1;
+        }
+
+        .match-item {
+            padding: 12px;
+            margin: 10px 0;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            cursor: move;
+            transition: all 0.3s;
+        }
+
+        .match-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .match-item.dragging {
+            opacity: 0.5;
+        }
+
+        .match-item.selected {
+            background: #667eea;
+            color: white;
+            border-color: #764ba2;
+        }
+
+        .match-item.correct {
+            background: #d4edda;
+            border-color: #28a745;
+        }
+
+        .match-item.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+        }
+
+        .token {
+            display: inline-block;
+            padding: 3px 8px;
+            margin: 2px;
+            background: #e9ecef;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .token:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .token.selected {
+            background: #667eea;
+            color: white;
+        }
+
+        .token.correct {
+            background: #28a745;
+            color: white;
+        }
+
+        .token.incorrect {
+            background: #dc3545;
+            color: white;
+        }
+
+        .show-answer-btn {
+            padding: 12px 25px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 600;
+            margin-top: 15px;
+            transition: all 0.3s;
+        }
+
+        .show-answer-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .rationale {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f4ff;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .rationale.visible {
+            display: block;
+        }
+
+        .rationale h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        code {
+            background: #f4f4f4;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-size: 0.9em;
+        }
+
+        .code-block {
+            display: block;
+            background: #f4f4f4;
+            padding: 12px 16px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            color: #d63384;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            overflow-x: auto;
+        }
+
+        .question-text p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1 style="color: white;">Quiz Simulator</h1>
+        </div>
+        
+        <div class="upload-area">
+            <label for="file-input" class="upload-label">
+                📄 Upload Markdown Quiz File
+            </label>
+            <input type="file" id="file-input" accept=".md,.markdown">
+        </div>
+        
+        <div id="quiz-content" class="quiz-content"></div>
+    </div>
+
+    <script>
+        class QuizParser {
+            constructor() {
+                this.content = '';
+            }
+
+            parseInlineFormatting(text) {
+                // Parse code blocks first (triple backticks) - treat as paragraph-level code
+                text = text.replace(/```([a-zA-Z]*)\n?([\s\S]*?)```/g, (match, lang, code) => {
+                    return `<span class="code-block">${this.escapeHtml(code.trim())}</span>`;
+                });
+                
+                // Parse inline code (single backticks)
+                text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+                
+                // Parse bold
+                text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                
+                // Parse italic
+                text = text.replace(/\*([^*]+)\*/g, '<em>$1</em>');
+                text = text.replace(/_([^_]+)_/g, '<em>$1</em>');
+                
+                return text;
+            }
+
+            escapeHtml(text) {
+                const map = {
+                    '&': '&amp;',
+                    '<': '&lt;',
+                    '>': '&gt;',
+                    '"': '&quot;',
+                    "'": '&#39;'
+                };
+                return text.replace(/[&<>"']/g, m => map[m]);
+            }
+
+            parseMarkdown(markdown) {
+                const lines = markdown.split('\n');
+                const quiz = {
+                    title: '',
+                    sections: [],
+                    questions: []
+                };
+
+                let currentQuestion = null;
+                let currentSection = null;
+                let inRationale = false;
+                let inClozeOptions = false;
+                let currentBlankId = '';
+                let inCodeBlock = false;
+                let codeBlockContent = '';
+                let pendingOptionType = null; // Track if we're waiting for option text: 'correct' or 'incorrect'
+
+                for (let i = 0; i < lines.length; i++) {
+                    const line = lines[i];
+                    const trimmed = line.trim();
+
+                    // Handle code blocks
+                    if (trimmed.startsWith('```')) {
+                        if (!inCodeBlock) {
+                            inCodeBlock = true;
+                            codeBlockContent = '';
+                            continue;
+                        } else {
+                            inCodeBlock = false;
+                            // Add the code block to the current context
+                            const formattedCodeBlock = `<span class="code-block">${this.escapeHtml(codeBlockContent)}</span>`;
+                            
+                            if (currentQuestion) {
+                                // If we're waiting for option text, this code block is the option
+                                if (pendingOptionType && currentQuestion.type === 'multiple-choice') {
+                                    if (pendingOptionType === 'correct') {
+                                        currentQuestion.correctIndices.push(currentQuestion.options.length);
+                                    }
+                                    currentQuestion.options.push(formattedCodeBlock);
+                                    pendingOptionType = null;
+                                } else if (inRationale) {
+                                    currentQuestion.rationale += (currentQuestion.rationale ? '\n' : '') + formattedCodeBlock;
+                                } else {
+                                    currentQuestion.text += (currentQuestion.text ? '\n' : '') + formattedCodeBlock;
+                                }
+                            }
+                            codeBlockContent = '';
+                            continue;
+                        }
+                    }
+
+                    if (inCodeBlock) {
+                        codeBlockContent += (codeBlockContent ? '\n' : '') + line;
+                        continue;
+                    }
+
+                    // Quiz title
+                    if (trimmed.startsWith('# ') && !trimmed.startsWith('## ')) {
+                        quiz.title = this.parseInlineFormatting(trimmed.substring(2));
+                        continue;
+                    }
+
+                    // Section headers (H2)
+                    if (trimmed.startsWith('## ') && !trimmed.startsWith('### ')) {
+                        if (currentQuestion) {
+                            if (currentSection) {
+                                currentSection.questions.push(currentQuestion);
+                            } else {
+                                quiz.questions.push(currentQuestion);
+                            }
+                            currentQuestion = null;
+                        }
+                        currentSection = {
+                            title: this.parseInlineFormatting(trimmed.substring(3)),
+                            questions: []
+                        };
+                        quiz.sections.push(currentSection);
+                        inRationale = false;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    // Question types - using regex for more flexible matching
+                    if (/^###\s+Question\s*$/i.test(trimmed)) {
+                        if (currentQuestion) {
+                            if (currentSection) {
+                                currentSection.questions.push(currentQuestion);
+                            } else {
+                                quiz.questions.push(currentQuestion);
+                            }
+                        }
+                        currentQuestion = { type: 'multiple-choice', text: '', options: [], correctIndices: [], rationale: '' };
+                        inRationale = false;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    if (/^###\s+Token\s*$/i.test(trimmed)) {
+                        if (currentQuestion) {
+                            if (currentSection) {
+                                currentSection.questions.push(currentQuestion);
+                            } else {
+                                quiz.questions.push(currentQuestion);
+                            }
+                        }
+                        currentQuestion = { type: 'token', text: '', rationale: '' };
+                        inRationale = false;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    if (/^###\s+Cloze\s*$/i.test(trimmed)) {
+                        if (currentQuestion) {
+                            if (currentSection) {
+                                currentSection.questions.push(currentQuestion);
+                            } else {
+                                quiz.questions.push(currentQuestion);
+                            }
+                        }
+                        currentQuestion = { type: 'cloze', text: '', blanks: {}, rationale: '' };
+                        inRationale = false;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    if (/^###\s+Match\s*$/i.test(trimmed)) {
+                        if (currentQuestion) {
+                            if (currentSection) {
+                                currentSection.questions.push(currentQuestion);
+                            } else {
+                                quiz.questions.push(currentQuestion);
+                            }
+                        }
+                        currentQuestion = { type: 'match', text: '', pairs: {}, rationale: '' };
+                        inRationale = false;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    if (/^###\s+Rationale\s*$/i.test(trimmed)) {
+                        inRationale = true;
+                        inClozeOptions = false;
+                        pendingOptionType = null;
+                        continue;
+                    }
+
+                    // Cloze blank options
+                    if (currentQuestion && currentQuestion.type === 'cloze' && trimmed.startsWith('#### [BLANK:')) {
+                        const match = trimmed.match(/\[BLANK:([^\]]+)\]/);
+                        if (match) {
+                            currentBlankId = match[1];
+                            currentQuestion.blanks[currentBlankId] = { options: [], correctIndex: -1 };
+                            inClozeOptions = true;
+                            inRationale = false;
+                        }
+                        continue;
+                    }
+
+                    // Process content based on context
+                    if (currentQuestion) {
+                        if (inRationale) {
+                            if (trimmed.startsWith('- ')) {
+                                currentQuestion.rationale += (currentQuestion.rationale ? '\n' : '') + this.parseInlineFormatting(trimmed.substring(2));
+                            } else if (trimmed && !trimmed.startsWith('#')) {
+                                currentQuestion.rationale += (currentQuestion.rationale ? '\n' : '') + this.parseInlineFormatting(trimmed);
+                            }
+                        } else if (inClozeOptions && currentQuestion.type === 'cloze') {
+                            if (trimmed.startsWith('- [ ] ')) {
+                                currentQuestion.blanks[currentBlankId].options.push(this.parseInlineFormatting(trimmed.substring(6)));
+                            } else if (trimmed.startsWith('- [x] ')) {
+                                currentQuestion.blanks[currentBlankId].correctIndex = currentQuestion.blanks[currentBlankId].options.length;
+                                currentQuestion.blanks[currentBlankId].options.push(this.parseInlineFormatting(trimmed.substring(6)));
+                            }
+                        } else if (currentQuestion.type === 'multiple-choice') {
+                            // Handle checkbox on same line as text: "- [ ] Option text"
+                            if (trimmed.startsWith('- [ ] ') && trimmed.length > 6) {
+                                currentQuestion.options.push(this.parseInlineFormatting(trimmed.substring(6)));
+                                pendingOptionType = null;
+                            } 
+                            // Handle checkbox on same line as text: "- [x] Option text"
+                            else if (trimmed.startsWith('- [x] ') && trimmed.length > 6) {
+                                currentQuestion.correctIndices.push(currentQuestion.options.length);
+                                currentQuestion.options.push(this.parseInlineFormatting(trimmed.substring(6)));
+                                pendingOptionType = null;
+                            }
+                            // Handle checkbox alone on line: "- [ ]"
+                            else if (trimmed === '- [ ]') {
+                                pendingOptionType = 'incorrect';
+                            }
+                            // Handle checkbox alone on line: "- [x]"
+                            else if (trimmed === '- [x]') {
+                                pendingOptionType = 'correct';
+                            }
+                            // If we're waiting for option text and this line has content
+                            else if (pendingOptionType && trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('-')) {
+                                if (pendingOptionType === 'correct') {
+                                    currentQuestion.correctIndices.push(currentQuestion.options.length);
+                                }
+                                currentQuestion.options.push(this.parseInlineFormatting(trimmed));
+                                pendingOptionType = null;
+                            }
+                            // Regular question text
+                            else if (trimmed && !trimmed.startsWith('#')) {
+                                currentQuestion.text += (currentQuestion.text ? '\n' : '') + this.parseInlineFormatting(trimmed);
+                            }
+                        } else if (currentQuestion.type === 'match') {
+                            const matchPattern = /\[([^\]]+)\]\s+(.+)/;
+                            const match = trimmed.match(matchPattern);
+                            if (match) {
+                                currentQuestion.pairs[match[2]] = match[1];
+                            } else if (trimmed && !trimmed.startsWith('#')) {
+                                currentQuestion.text += (currentQuestion.text ? '\n' : '') + this.parseInlineFormatting(trimmed);
+                            }
+                        } else if (trimmed && !trimmed.startsWith('#')) {
+                            currentQuestion.text += (currentQuestion.text ? '\n' : '') + line;
+                        }
+                    }
+                }
+
+                // Add final question
+                if (currentQuestion) {
+                    if (currentSection) {
+                        currentSection.questions.push(currentQuestion);
+                    } else {
+                        quiz.questions.push(currentQuestion);
+                    }
+                }
+                
+                return quiz;
+            }
+        }
+
+        class QuizRenderer {
+            constructor(containerId) {
+                this.container = document.getElementById(containerId);
+            }
+
+            render(quiz) {
+                this.container.innerHTML = '';
+                this.container.classList.add('active');
+
+                // Title
+                const title = document.createElement('h1');
+                title.innerHTML = quiz.title;
+                this.container.appendChild(title);
+
+                // Process sections
+                if (quiz.sections && quiz.sections.length > 0) {
+                    quiz.sections.forEach(section => {
+                        // Section header
+                        const sectionHeader = document.createElement('h2');
+                        sectionHeader.innerHTML = section.title;
+                        this.container.appendChild(sectionHeader);
+
+                        // Section questions
+                        if (section.questions && section.questions.length > 0) {
+                            section.questions.forEach((question, index) => {
+                                const questionDiv = document.createElement('div');
+                                questionDiv.className = 'question';
+                                questionDiv.id = `question-section-${section.title}-${index}`;
+
+                                if (question.type === 'multiple-choice') {
+                                    this.renderMultipleChoice(questionDiv, question, index);
+                                } else if (question.type === 'token') {
+                                    this.renderToken(questionDiv, question, index);
+                                } else if (question.type === 'cloze') {
+                                    this.renderCloze(questionDiv, question, index);
+                                } else if (question.type === 'match') {
+                                    this.renderMatch(questionDiv, question, index);
+                                }
+
+                                this.container.appendChild(questionDiv);
+                            });
+                        }
+                    });
+                }
+
+                // Process standalone questions
+                quiz.questions.forEach((question, index) => {
+                    const questionDiv = document.createElement('div');
+                    questionDiv.className = 'question';
+                    questionDiv.id = `question-${index}`;
+
+                    if (question.type === 'multiple-choice') {
+                        this.renderMultipleChoice(questionDiv, question, index);
+                    } else if (question.type === 'token') {
+                        this.renderToken(questionDiv, question, index);
+                    } else if (question.type === 'cloze') {
+                        this.renderCloze(questionDiv, question, index);
+                    } else if (question.type === 'match') {
+                        this.renderMatch(questionDiv, question, index);
+                    }
+
+                    this.container.appendChild(questionDiv);
+                });
+            }
+
+            renderMultipleChoice(container, question, index) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'question-text';
+                textDiv.innerHTML = this.formatQuestionText(question.text);
+                container.appendChild(textDiv);
+
+                const optionsList = document.createElement('ul');
+                optionsList.className = 'options';
+
+                question.options.forEach((option, optIndex) => {
+                    const li = document.createElement('li');
+                    li.className = 'option';
+                    li.innerHTML = option;
+                    li.dataset.index = optIndex;
+                    li.dataset.correct = question.correctIndices.includes(optIndex);
+                    
+                    li.addEventListener('click', () => {
+                        if (question.correctIndices.length === 1) {
+                            optionsList.querySelectorAll('.option').forEach(opt => {
+                                opt.classList.remove('selected');
+                            });
+                        }
+                        li.classList.toggle('selected');
+                    });
+                    
+                    optionsList.appendChild(li);
+                });
+
+                container.appendChild(optionsList);
+                this.addShowAnswerButton(container, question, index);
+            }
+
+            renderToken(container, question, index) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'question-text';
+                
+                let html = question.text.replace(/\[TOKEN CORRECT\]([^[]+)\[\/TOKEN CORRECT\]/g, 
+                    '<span class="token" data-correct="true">$1</span>');
+                html = html.replace(/\[TOKEN\]([^[]+)\[\/TOKEN\]/g, 
+                    '<span class="token" data-correct="false">$1</span>');
+                
+                textDiv.innerHTML = this.formatQuestionText(html);
+                container.appendChild(textDiv);
+
+                const tokens = textDiv.querySelectorAll('.token');
+                tokens.forEach(token => {
+                    token.addEventListener('click', () => {
+                        token.classList.toggle('selected');
+                    });
+                });
+
+                this.addShowAnswerButton(container, question, index);
+            }
+
+            renderCloze(container, question, index) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'question-text cloze-text';
+                
+                let html = question.text;
+                Object.keys(question.blanks).forEach(blankId => {
+                    const blank = question.blanks[blankId];
+                    const dropdown = `<select class="cloze-dropdown" data-blank="${blankId}" data-correct="${blank.correctIndex}">
+                        <option value="">Choose...</option>
+                        ${blank.options.map((opt, i) => 
+                            `<option value="${i}">${opt}</option>`
+                        ).join('')}
+                    </select>`;
+                    html = html.replace(`[BLANK:${blankId}]`, dropdown);
+                });
+                
+                textDiv.innerHTML = this.formatQuestionText(html);
+                container.appendChild(textDiv);
+                this.addShowAnswerButton(container, question, index);
+            }
+
+            renderMatch(container, question, index) {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'question-text';
+                textDiv.innerHTML = this.formatQuestionText(question.text);
+                container.appendChild(textDiv);
+
+                const matchContainer = document.createElement('div');
+                matchContainer.className = 'match-container';
+
+                const leftColumn = document.createElement('div');
+                leftColumn.className = 'match-column';
+                const answers = Object.values(question.pairs);
+                this.shuffleArray(answers);
+                
+                answers.forEach((answer, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'match-item';
+                    item.draggable = true;
+                    item.innerHTML = answer;
+                    item.dataset.value = answer;
+                    item.dataset.index = i;
+                    
+                    item.addEventListener('click', () => {
+                        leftColumn.querySelectorAll('.match-item').forEach(it => {
+                            it.classList.remove('selected');
+                        });
+                        item.classList.add('selected');
+                    });
+                    
+                    item.addEventListener('dragstart', (e) => {
+                        e.dataTransfer.setData('text/plain', answer);
+                        item.classList.add('dragging');
+                        item.classList.add('selected');
+                    });
+                    
+                    item.addEventListener('dragend', () => {
+                        item.classList.remove('dragging');
+                        item.classList.remove('selected');
+                    });
+                    
+                    leftColumn.appendChild(item);
+                });
+
+                const rightColumn = document.createElement('div');
+                rightColumn.className = 'match-column';
+                const questions = Object.keys(question.pairs);
+                this.shuffleArray(questions);
+                
+                questions.forEach((q, i) => {
+                    const item = document.createElement('div');
+                    item.className = 'match-item';
+                    item.innerHTML = q;
+                    item.dataset.question = q;
+                    item.dataset.correctAnswer = question.pairs[q];
+                    item.dataset.currentAnswer = '';
+                    
+                    item.addEventListener('dragover', (e) => {
+                        e.preventDefault();
+                    });
+                    
+                    item.addEventListener('drop', (e) => {
+                        e.preventDefault();
+                        const answer = e.dataTransfer.getData('text/plain');
+                        item.dataset.currentAnswer = answer;
+                        item.innerHTML = `${q} ← ${answer}`;
+                        item.classList.add('selected');
+                    });
+                    
+                    rightColumn.appendChild(item);
+                });
+
+                matchContainer.appendChild(leftColumn);
+                matchContainer.appendChild(rightColumn);
+                container.appendChild(matchContainer);
+                this.addShowAnswerButton(container, question, index);
+            }
+
+            formatQuestionText(text) {
+                const parts = text.split(/\n\n+/);
+                return parts.map(part => {
+                    if (part.trim().startsWith('<') || part.includes('<span class="code-block">')) {
+                        return part;
+                    }
+                    return part.trim() ? `<p>${part}</p>` : '';
+                }).filter(p => p).join('');
+            }
+
+            addShowAnswerButton(container, question, index) {
+                const button = document.createElement('button');
+                button.className = 'show-answer-btn';
+                button.textContent = 'Show Answer';
+                button.addEventListener('click', () => this.showAnswer(container, question, button));
+                container.appendChild(button);
+
+                if (question.rationale && question.rationale.trim().length > 0) {
+                    const rationaleDiv = document.createElement('div');
+                    rationaleDiv.className = 'rationale';
+                    rationaleDiv.innerHTML = `<h3>Rationale</h3>${this.formatQuestionText(question.rationale)}`;
+                    container.appendChild(rationaleDiv);
+                }
+            }
+
+            showAnswer(container, question, button) {
+                if (question.type === 'multiple-choice') {
+                    const options = container.querySelectorAll('.option');
+                    options.forEach(option => {
+                        const wasSelected = option.classList.contains('selected');
+                        option.classList.remove('selected');
+                        if (option.dataset.correct === 'true') {
+                            option.classList.add('correct');
+                        } else if (wasSelected) {
+                            option.classList.add('incorrect');
+                        }
+                    });
+                } else if (question.type === 'token') {
+                    const tokens = container.querySelectorAll('.token');
+                    tokens.forEach(token => {
+                        if (token.dataset.correct === 'true') {
+                            token.classList.add('correct');
+                        } else if (token.classList.contains('selected')) {
+                            token.classList.add('incorrect');
+                        }
+                    });
+                } else if (question.type === 'cloze') {
+                    const dropdowns = container.querySelectorAll('.cloze-dropdown');
+                    dropdowns.forEach(dropdown => {
+                        const correctIndex = dropdown.dataset.correct;
+                        const currentValue = dropdown.value;
+                        
+                        if (currentValue && currentValue !== correctIndex && currentValue !== '') {
+                            dropdown.classList.add('incorrect');
+                        } else if (currentValue === correctIndex) {
+                            dropdown.classList.add('correct');
+                        }
+                        
+                        dropdown.value = correctIndex;
+                        if (!dropdown.classList.contains('incorrect')) {
+                            dropdown.classList.add('correct');
+                        }
+                    });
+                } else if (question.type === 'match') {
+                    const rightItems = container.querySelectorAll('.match-column:last-child .match-item');
+                    rightItems.forEach(item => {
+                        item.classList.remove('selected');
+                        const correct = item.dataset.correctAnswer;
+                        const current = item.dataset.currentAnswer;
+                        
+                        if (current) {
+                            if (current === correct) {
+                                item.classList.add('correct');
+                            } else {
+                                item.classList.add('incorrect');
+                            }
+                        }
+                        
+                        item.innerHTML = `${item.dataset.question} ← ${correct}`;
+                    });
+                }
+
+                const rationale = container.querySelector('.rationale');
+                if (rationale) {
+                    rationale.classList.add('visible');
+                }
+
+                button.style.display = 'none';
+            }
+
+            shuffleArray(array) {
+                for (let i = array.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [array[i], array[j]] = [array[j], array[i]];
+                }
+                return array;
+            }
+        }
+
+        // Initialize
+        const parser = new QuizParser();
+        const renderer = new QuizRenderer('quiz-content');
+
+        document.getElementById('file-input').addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (file) {
+                const text = await file.text();
+                const quiz = parser.parseMarkdown(text);
+                renderer.render(quiz);
+            }
+        });
+    </script>
+</body>
+</html>
